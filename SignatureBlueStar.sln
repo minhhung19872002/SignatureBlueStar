@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignerHelper", "SignerHelper\SignerHelper.csproj", "{B6BE4DEE-A4EF-5979-01AC-DFF381587FC3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B6BE4DEE-A4EF-5979-01AC-DFF381587FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6BE4DEE-A4EF-5979-01AC-DFF381587FC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6BE4DEE-A4EF-5979-01AC-DFF381587FC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6BE4DEE-A4EF-5979-01AC-DFF381587FC3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6941E712-8AB5-452A-8408-31DD6913AB26}
+	EndGlobalSection
+EndGlobal
