@@ -27,13 +27,26 @@
     "directories": {
       "output": "dist"
     },
+    "asarUnpack": [
+      "SignerHelper/publish/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "SignerHelper/publish",
+        "to": "SignerHelper/publish"
+      },
+      {
+        "from": "Signature.png",
+        "to": "Signature.png"
+      }
+    ],
     "files": [
       "main.js",
       "preload.js",
       "index.html",
       "renderer.js",
       "styles.css",
-      "SignerHelper/publish/**/*",
+      "Signature.png",
       "node_modules/pdf-lib/**/*",
       "node_modules/pdfjs-dist/**/*",
       "node_modules/@signpdf/**/*",

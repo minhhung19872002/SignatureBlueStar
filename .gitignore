@@ -1,5 +1,9 @@
 node_modules/
 *.log
+.vs/
+SignerHelper/publish/
+usb-sign-test.pdf
+dist/
 dist/
 SignerHelper/bin/
 SignerHelper/obj/
