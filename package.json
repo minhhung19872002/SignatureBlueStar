@@ -1,0 +1,53 @@
+{
+  "name": "signature-blue-star",
+  "version": "1.0.0",
+  "description": "Desktop app to view PDFs and place electronic signatures on selected regions.",
+  "main": "main.js",
+  "author": "OpenAI Codex",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:signer": "dotnet publish .\\SignerHelper\\SignerHelper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o .\\SignerHelper\\publish",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build:signer && electron-builder --win nsis portable"
+  },
+  "dependencies": {
+    "@signpdf/placeholder-pdf-lib": "^3.3.0",
+    "@signpdf/signpdf": "^3.3.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.signaturebluestar.app",
+    "productName": "Signature Blue Star",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "styles.css",
+      "SignerHelper/publish/**/*",
+      "node_modules/pdf-lib/**/*",
+      "node_modules/pdfjs-dist/**/*",
+      "node_modules/@signpdf/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

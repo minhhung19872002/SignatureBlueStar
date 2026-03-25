@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signature Blue Star</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <p class="eyebrow">Desktop PDF Signer</p>
+          <h1>Signature Blue Star</h1>
+          <p class="lead">
+            Mở file PDF, kéo chuột chọn vị trí và chèn chữ ký điện tử trực tiếp
+            lên tài liệu.
+          </p>
+        </div>
+
+        <div class="panel">
+          <button id="open-file-btn" class="primary-btn">Open PDF</button>
+          <p id="file-name" class="muted">Chưa có file nào được mở.</p>
+        </div>
+
+        <div class="panel">
+          <h2>Chữ ký</h2>
+          <label class="field">
+            <span>Nội dung chữ ký</span>
+            <input
+              id="signature-text"
+              type="text"
+              maxlength="80"
+              placeholder="Nguyen Van A"
+            />
+          </label>
+
+          <label class="field">
+            <span>Ghi chú dưới chữ ký</span>
+            <input
+              id="signature-subtitle"
+              type="text"
+              maxlength="120"
+              placeholder="Da ky dien tu"
+            />
+          </label>
+
+          <label class="field">
+            <span>Cỡ chữ</span>
+            <input id="font-size" type="range" min="14" max="48" value="24" />
+          </label>
+          <p id="font-size-label" class="muted">24 px</p>
+
+          <p class="tip">
+            Kéo chuột trên một trang PDF để chọn vùng đặt chữ ký.
+          </p>
+          <button id="apply-signature-btn" class="secondary-btn" disabled>
+            Chèn chữ ký vào vùng đã chọn
+          </button>
+          <button id="save-file-btn" class="ghost-btn" disabled>
+            Lưu file PDF đã ký
+          </button>
+        </div>
+
+        <div class="panel">
+          <h2>Ky So USB</h2>
+          <label class="field">
+            <span>Chung thu WINCA</span>
+            <select id="certificate-select">
+              <option value="">Dang tai danh sach chung thu...</option>
+            </select>
+          </label>
+          <button id="usb-sign-btn" class="primary-btn" disabled>
+            Ky so PDF bang USB
+          </button>
+          <p class="tip">
+            Chon vung tren PDF, sau do app se dung WINCA USB token de ky so that.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2>Trạng thái</h2>
+          <p id="status-text" class="status-text">
+            Sẵn sàng. Hãy mở một file PDF để bắt đầu.
+          </p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-card">
+            <p class="eyebrow">Viewer</p>
+            <h2>PDF sẽ hiển thị ở đây</h2>
+            <p>
+              Sau khi mở file, bạn có thể cuộn từng trang và dùng chuột để chọn
+              vùng đặt chữ ký.
+            </p>
+          </div>
+        </div>
+        <div id="pdf-container" class="pdf-container hidden"></div>
+      </main>
+    </div>
+
+    <script src="./node_modules/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script type="module" src="renderer.js"></script>
+  </body>
+</html>
