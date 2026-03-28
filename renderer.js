@@ -430,8 +430,8 @@ async function handleUsbSign() {
     await loadPdfBytes(signedBytes);
 
     const suggestedName = state.fileName
-      ? state.fileName.replace(/\.pdf$/i, '') + '-usb-signed.pdf'
-      : 'usb-signed.pdf';
+      ? state.fileName.replace(/\.pdf$/i, '') + '-signed.pdf'
+      : 'signed.pdf';
 
     const saveResult = await window.pdfDesktopApi.savePdf({
       originalPath: state.filePath,
