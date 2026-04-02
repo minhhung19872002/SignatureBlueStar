@@ -78,6 +78,118 @@
           </p>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════
+             PANEL 3 · KÝ SỐ USB – ĐẠI DIỆN NHÀ THẦU
+             ═══════════════════════════════════════════════════ -->
+        <div class="panel panel--contractor" id="panel-contractor">
+          <div class="contractor-badge">
+            <div class="contractor-badge__stamp">
+              <div class="stamp-ring">
+                <span class="stamp-ring__text">CONG TY</span>
+                <span class="stamp-ring__diamond">◆</span>
+              </div>
+              <div class="stamp-center">
+                <span class="stamp-center__line">TNHH KY THUAT</span>
+                <span class="stamp-center__line">CONG NGHE</span>
+                <strong class="stamp-center__name">BLUESTAR</strong>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="contractor-title">
+            <span class="contractor-title__label">ĐẠI DIỆN NHÀ THẦU</span>
+            <span class="contractor-title__sub">(Ký tên, đóng dấu)</span>
+          </h2>
+
+          <label class="field field--contractor">
+            <span>Chon mau dong dau</span>
+            <select id="seal-template-select">
+              <option value="bluestar">Cong ty TNHH Ky Thuat Cong Nghe BLUESTAR</option>
+              <option value="bluestar2">Cong ty TNHH Ky Thuat Cong Nghe BLUESTAR (Q.10)</option>
+            </select>
+          </label>
+
+          <div class="contractor-fields">
+            <label class="field field--contractor">
+              <span>Ten cong ty</span>
+              <input id="contractor-company" type="text"
+                placeholder="Cong ty TNHH Ky Thuat Cong Nghe BLUESTAR"
+                maxlength="120" />
+            </label>
+
+            <label class="field field--contractor">
+              <span>Ma so thue (MST)</span>
+              <input id="contractor-mst" type="text"
+                placeholder="0318811225"
+                maxlength="20" />
+            </label>
+
+            <label class="field field--contractor">
+              <span>Dia chi</span>
+              <input id="contractor-address" type="text"
+                placeholder="Quan 10, TP. Ho Chi Minh"
+                maxlength="200" />
+            </label>
+
+            <div class="contractor-row">
+              <label class="field field--contractor">
+                <span>Ten nguoi ky</span>
+                <input id="contractor-name" type="text"
+                  placeholder="Bui Phi Hung"
+                  maxlength="80" />
+              </label>
+              <label class="field field--contractor">
+                <span>Chuc vu</span>
+                <input id="contractor-title-input" type="text"
+                  placeholder="Giam doc"
+                  maxlength="60" />
+              </label>
+            </div>
+          </div>
+
+          <label class="field field--contractor">
+            <span>Chung thu WINCA (Nha thau)</span>
+            <select id="contractor-cert-select">
+              <option value="">Dang tai danh sach chung thu...</option>
+            </select>
+          </label>
+
+          <button id="contractor-sign-btn" class="contractor-btn" disabled>
+            <span class="contractor-btn__icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </span>
+            Ky So – Dai Dien Nha Thau
+          </button>
+          <p class="tip">Chon vung tren PDF, dien day du thong tin, then nhan ky so.</p>
+
+          <!-- Mini live preview -->
+          <div class="contractor-preview" id="contractor-preview">
+            <p class="contractor-preview__heading">ĐẠI DIỆN NHÀ THẦU</p>
+            <p class="contractor-preview__sub">(Ký tên, đóng dấu)</p>
+            <div class="contractor-preview__body">
+              <div class="contractor-preview__seal">
+                <div class="cp-seal-ring">
+                  <span class="cp-seal-ring__txt">BLUESTAR</span>
+                </div>
+                <div class="cp-seal-center">
+                  <span class="cp-seal-center__c">CÔNG TY</span>
+                  <span class="cp-seal-center__l">TNHH KỸ THUẬT</span>
+                  <span class="cp-seal-center__l">CÔNG NGHỆ</span>
+                  <strong class="cp-seal-center__n">BLUESTAR</strong>
+                </div>
+              </div>
+              <div class="contractor-preview__info">
+                <div class="cp-sig" id="cp-sig">Chu ki dien tu</div>
+                <div class="cp-line"></div>
+                <div class="cp-name" id="cp-name">Ho Va Ten</div>
+                <div class="cp-role" id="cp-role">Chuc vu</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="panel">
           <h2>Trạng thái</h2>
           <p id="status-text" class="status-text">

@@ -241,6 +241,371 @@ button:disabled {
   display: none;
 }
 
+/* ─── PANEL 3 · KÝ SỐ USB – ĐẠI DIỆN NHÀ THẦU ─── */
+
+.panel--contractor {
+  border-color: rgba(220, 60, 40, 0.18);
+  background: linear-gradient(160deg, rgba(255, 252, 248, 0.88) 0%, rgba(255, 248, 242, 0.92) 100%);
+  box-shadow: 0 14px 40px rgba(220, 60, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Red seal badge */
+.contractor-badge {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.contractor-badge__stamp {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid #c0392b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 40% 35%, #fff5f5, #fff0f0 60%);
+  box-shadow: 0 4px 16px rgba(192, 57, 43, 0.2), inset 0 0 12px rgba(192, 57, 43, 0.04);
+  overflow: hidden;
+}
+
+.stamp-ring {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px solid #c0392b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stamp-ring__text {
+  position: absolute;
+  top: 8px;
+  font-size: 5.5px;
+  font-weight: 700;
+  color: #c0392b;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.stamp-ring__diamond {
+  position: absolute;
+  bottom: 6px;
+  font-size: 7px;
+  color: #c0392b;
+}
+
+.stamp-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.stamp-center__line {
+  font-size: 5.5px;
+  font-weight: 600;
+  color: #c0392b;
+  line-height: 1.35;
+  letter-spacing: 0.03em;
+}
+
+.stamp-center__name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #c0392b;
+  letter-spacing: 0.12em;
+  margin-top: 1px;
+  line-height: 1;
+}
+
+/* Title */
+.contractor-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px dashed rgba(192, 57, 43, 0.2);
+}
+
+.contractor-title__label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #183028;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contractor-title__sub {
+  font-size: 11px;
+  color: #61756b;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* Contractor fields */
+.contractor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 14px;
+  border: 1px solid rgba(192, 57, 43, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.contractor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.contractor-row .field {
+  border-top: 1px solid rgba(192, 57, 43, 0.08);
+}
+
+.contractor-row .field:first-child {
+  border-right: 1px solid rgba(192, 57, 43, 0.08);
+}
+
+.contractor-fields .field:first-child {
+  border-radius: 13px 13px 0 0;
+}
+
+.contractor-fields .field:last-child {
+  border-radius: 0 0 13px 13px;
+  border-top: 1px solid rgba(192, 57, 43, 0.08);
+}
+
+.field--contractor {
+  margin-bottom: 0;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(192, 57, 43, 0.08);
+  transition: background 200ms ease;
+}
+
+.field--contractor:first-child {
+  border-top: none;
+}
+
+.field--contractor:hover {
+  background: rgba(220, 60, 40, 0.03);
+}
+
+.field--contractor span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #7a3530;
+  margin-bottom: 5px;
+}
+
+.field--contractor input,
+.field--contractor select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(192, 57, 43, 0.18);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  color: #183028;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  outline: none;
+}
+
+.field--contractor input:focus,
+.field--contractor select:focus {
+  border-color: rgba(220, 60, 40, 0.5);
+  box-shadow: 0 0 0 3px rgba(220, 60, 40, 0.08);
+}
+
+/* Sign button */
+.contractor-btn {
+  width: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 150ms ease, opacity 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 6px 20px rgba(192, 57, 43, 0.3);
+  margin-bottom: 10px;
+}
+
+.contractor-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(192, 57, 43, 0.4);
+}
+
+.contractor-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.contractor-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.contractor-btn__icon {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── LIVE PREVIEW ─── */
+.contractor-preview {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1.5px dashed rgba(192, 57, 43, 0.25);
+  border-radius: 14px;
+  background: rgba(255, 252, 248, 0.7);
+  animation: fadeInUp 400ms ease both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.contractor-preview__heading {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #183028;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.contractor-preview__sub {
+  text-align: center;
+  font-size: 9px;
+  color: #61756b;
+  font-style: italic;
+  margin: 0 0 10px;
+}
+
+.contractor-preview__body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* Mini red seal in preview */
+.contractor-preview__seal {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.cp-seal-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid rgba(192, 57, 43, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-seal-ring__txt {
+  position: absolute;
+  top: 7px;
+  font-size: 5.5px;
+  font-weight: 700;
+  color: rgba(192, 57, 43, 0.7);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.cp-seal-center {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(192, 57, 43, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 38% 32%, rgba(255,245,245,0.8), rgba(255,240,240,0.5));
+}
+
+.cp-seal-center__c {
+  font-size: 5.5px;
+  font-weight: 700;
+  color: rgba(192, 57, 43, 0.8);
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.cp-seal-center__l {
+  font-size: 5px;
+  color: rgba(192, 57, 43, 0.7);
+  line-height: 1.3;
+}
+
+.cp-seal-center__n {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: rgba(192, 57, 43, 0.9);
+  letter-spacing: 0.1em;
+  margin-top: 1px;
+}
+
+/* Signature info in preview */
+.contractor-preview__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cp-sig {
+  font-family: "Brush Script MT", "Segoe Script", cursive;
+  font-size: 15px;
+  color: #183028;
+  margin-bottom: 3px;
+  transition: all 200ms ease;
+}
+
+.cp-line {
+  width: 100%;
+  height: 1px;
+  background: rgba(24, 48, 40, 0.35);
+  margin-bottom: 3px;
+}
+
+.cp-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #183028;
+  text-align: center;
+  transition: all 200ms ease;
+}
+
+.cp-role {
+  font-size: 9px;
+  color: #61756b;
+  text-align: center;
+  font-style: italic;
+  transition: all 200ms ease;
+}
+
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;

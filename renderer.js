@@ -8,7 +8,8 @@ const state = {
   pages: [],
   selection: null,
   placements: [],
-  certificates: []
+  certificates: [],
+  contractorCerts: []
 };
 
 const openFileBtn = document.getElementById('open-file-btn');
@@ -25,6 +26,19 @@ const signatureSubtitleInput = document.getElementById('signature-subtitle');
 const fontSizeInput = document.getElementById('font-size');
 const fontSizeLabel = document.getElementById('font-size-label');
 
+// ── Contractor panel elements ──
+const contractorCertSelect = document.getElementById('contractor-cert-select');
+const contractorSignBtn = document.getElementById('contractor-sign-btn');
+const contractorCompanyInput = document.getElementById('contractor-company');
+const contractorMstInput = document.getElementById('contractor-mst');
+const contractorAddressInput = document.getElementById('contractor-address');
+const contractorNameInput = document.getElementById('contractor-name');
+const contractorTitleInput = document.getElementById('contractor-title-input');
+const sealTemplateSelect = document.getElementById('seal-template-select');
+const cpSig = document.getElementById('cp-sig');
+const cpName = document.getElementById('cp-name');
+const cpRole = document.getElementById('cp-role');
+
 openFileBtn.addEventListener('click', handleOpenPdf);
 applySignatureBtn.addEventListener('click', handleApplySignature);
 saveFileBtn.addEventListener('click', handleSavePdf);
@@ -34,8 +48,15 @@ fontSizeInput.addEventListener('input', () => {
 });
 certificateSelect.addEventListener('change', updateUsbButtonState);
 
+// ── Contractor panel events ──
+contractorCertSelect.addEventListener('change', updateContractorButtonState);
+contractorNameInput.addEventListener('input', updateContractorPreview);
+contractorTitleInput.addEventListener('input', updateContractorPreview);
+contractorSignBtn.addEventListener('click', handleContractorSign);
+
 setStatus('San sang. Hay mo mot file PDF de bat dau.');
 loadCertificates();
+loadContractorCertificates();
 
 async function ensurePdfLibraries() {
   if (!window.PDFLib) {
@@ -59,37 +80,135 @@ async function ensurePdfLibraries() {
 async function loadCertificates() {
   if (!window.pdfDesktopApi?.listCertificates) {
     certificateSelect.innerHTML = '<option value="">Khong co bridge ky so</option>';
+    contractorCertSelect.innerHTML = '<option value="">Khong co bridge ky so</option>';
     return;
   }
 
   try {
     const certificates = await window.pdfDesktopApi.listCertificates();
     state.certificates = certificates;
+    state.contractorCerts = certificates;
 
     if (certificates.length === 0) {
       certificateSelect.innerHTML = '<option value="">Khong tim thay chung thu WINCA</option>';
+      contractorCertSelect.innerHTML = '<option value="">Khong tim thay chung thu WINCA</option>';
       usbSignBtn.disabled = true;
+      contractorSignBtn.disabled = true;
       return;
     }
 
-    certificateSelect.innerHTML = certificates
+    const html = certificates
       .map((cert, index) => {
         const label = `${index + 1}. ${trimSubject(cert.subject)} | ${formatDate(cert.notAfter)}`;
         return `<option value="${escapeHtml(cert.thumbprint)}">${escapeHtml(label)}</option>`;
       })
       .join('');
 
+    certificateSelect.innerHTML = html;
+    contractorCertSelect.innerHTML = html;
     updateUsbButtonState();
+    updateContractorButtonState();
   } catch (error) {
     console.error(error);
     certificateSelect.innerHTML = '<option value="">Tai chung thu that bai</option>';
+    contractorCertSelect.innerHTML = '<option value="">Tai chung thu that bai</option>';
     usbSignBtn.disabled = true;
+    contractorSignBtn.disabled = true;
     setStatus(`Khong tai duoc danh sach chung thu: ${error.message}`);
   }
 }
 
 function updateUsbButtonState() {
   usbSignBtn.disabled = !state.selection || !certificateSelect.value;
+}
+
+function updateContractorButtonState() {
+  contractorSignBtn.disabled = !(
+    state.selection &&
+    contractorCertSelect.value
+  );
+}
+
+function updateContractorPreview() {
+  const name = contractorNameInput.value.trim() || 'Chu ki dien tu';
+  const role = contractorTitleInput.value.trim() || 'Chuc vu';
+  cpSig.textContent = name;
+  cpName.textContent = contractorNameInput.value.trim() ? name : 'Ho Va Ten';
+  cpRole.textContent = role;
+}
+
+async function handleContractorSign() {
+  if (!state.selection) {
+    setStatus('Can chon vung ky tren PDF truoc (Panel Nha Thau).');
+    return;
+  }
+
+  if (!contractorCertSelect.value) {
+    setStatus('Can chon chung thu WINCA (Panel Nha Thau) truoc khi ky so.');
+    return;
+  }
+
+  const company = contractorCompanyInput.value.trim();
+  const mst = contractorMstInput.value.trim();
+  const address = contractorAddressInput.value.trim();
+  const signerName = contractorNameInput.value.trim() || trimSubject(
+    state.contractorCerts.find((c) => c.thumbprint === contractorCertSelect.value)?.subject || ''
+  );
+  const signerTitle = contractorTitleInput.value.trim() || 'Giam doc';
+
+  try {
+    setStatus('Dang chuan bi du lieu ky so Nha Thau...');
+    const currentBytes = await state.pdfDoc.save();
+    const { pageIndex, viewport, screenRect } = state.selection;
+    const pdfPage = state.pdfDoc.getPages()[pageIndex];
+    const pdfWidth = pdfPage.getWidth();
+    const pdfHeight = pdfPage.getHeight();
+    const scaleX = pdfWidth / viewport.width;
+    const scaleY = pdfHeight / viewport.height;
+    const x1 = screenRect.left * scaleX;
+    const y1 = pdfHeight - ((screenRect.top + screenRect.height) * scaleY);
+    const x2 = x1 + screenRect.width * scaleX;
+    const y2 = y1 + screenRect.height * scaleY;
+
+    const cert = state.contractorCerts.find((c) => c.thumbprint === contractorCertSelect.value);
+
+    setStatus('WINCA se hien hop nhap PIN. Dang ky so Dai Dien Nha Thau...');
+    const signed = await window.pdfDesktopApi.signWithUsb({
+      data: uint8ArrayToBase64(currentBytes),
+      certThumbprint: contractorCertSelect.value,
+      pageIndex,
+      widgetRect: [x1, y1, x2, y2],
+      signerName: signerName || 'Dai Dien Nha Thau',
+      reason: 'Ky so Dai Dien Nha Thau',
+      location: address || 'Vietnam',
+      companyName: company,
+      mst: mst,
+      address: address,
+      signerTitle: signerTitle
+    });
+
+    const signedBytes = base64ToUint8Array(signed.data);
+    await loadPdfBytes(signedBytes);
+
+    const suggestedName = state.fileName
+      ? state.fileName.replace(/\.pdf$/i, '') + '-nha-thau-signed.pdf'
+      : 'signed-nha-thau.pdf';
+
+    const saveResult = await window.pdfDesktopApi.savePdf({
+      originalPath: state.filePath,
+      suggestedName,
+      data: signed.data
+    });
+
+    if (saveResult?.filePath) {
+      setStatus(`Da ky so Dai Dien Nha Thau va luu tai: ${saveResult.filePath}`);
+    } else {
+      setStatus('Da ky so thanh cong, nhung ban huy thao tac luu file.');
+    }
+  } catch (error) {
+    console.error(error);
+    setStatus(`Ky so Nha Thau that bai: ${error.message}`);
+  }
 }
 
 function setStatus(message) {
@@ -151,6 +270,7 @@ async function loadPdfBytes(rawBytes) {
   applySignatureBtn.disabled = true;
   saveFileBtn.disabled = true;
   updateUsbButtonState();
+  updateContractorButtonState();
 
   emptyState.classList.add('hidden');
   pdfContainer.classList.remove('hidden');
@@ -208,6 +328,7 @@ function bindSelectionEvents(wrapper, viewport, pageIndex) {
     state.selection = null;
     applySignatureBtn.disabled = true;
     updateUsbButtonState();
+    updateContractorButtonState();
 
     const bounds = wrapper.getBoundingClientRect();
     startX = event.clientX - bounds.left;
@@ -272,6 +393,7 @@ function bindSelectionEvents(wrapper, viewport, pageIndex) {
     };
     applySignatureBtn.disabled = false;
     updateUsbButtonState();
+    updateContractorButtonState();
     setStatus(`Da chon vung tren trang ${pageIndex + 1}. Co the chen chu ky hoac ky so USB.`);
   };
 }
