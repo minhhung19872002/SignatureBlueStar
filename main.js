@@ -68,7 +68,7 @@ ipcMain.handle('pdf:open', async () => {
   const result = await dialog.showOpenDialog({
     title: 'Open PDF',
     filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
-    properties: ['openFile']
+    properties: ['openFile', 'multiSelections']
   });
 
   if (result.canceled || result.filePaths.length === 0) {
@@ -83,6 +83,31 @@ ipcMain.handle('pdf:open', async () => {
     fileName: path.basename(filePath),
     data: bytes.toString('base64')
   };
+});
+
+ipcMain.handle('pdf:openMultiple', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Open Multiple PDFs',
+    filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+    properties: ['openFile', 'multiSelections']
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return [];
+  }
+
+  const files = await Promise.all(
+    result.filePaths.map(async (filePath) => {
+      const bytes = await fs.readFile(filePath);
+      return {
+        filePath,
+        fileName: path.basename(filePath),
+        data: bytes.toString('base64')
+      };
+    })
+  );
+
+  return files;
 });
 
 ipcMain.handle('pdf:save', async (_, payload) => {

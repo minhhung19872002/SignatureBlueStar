@@ -21,6 +21,30 @@
         <div class="panel">
           <button id="open-file-btn" class="primary-btn">Open PDF</button>
           <p id="file-name" class="muted">Chưa có file nào được mở.</p>
+
+          <!-- ── File Queue ── -->
+          <div id="file-queue-panel" class="file-queue-panel hidden">
+            <div id="file-queue-empty" class="file-queue-empty">
+              Khong co file nao trong hang doi.
+            </div>
+            <ul id="file-queue-list" class="file-queue-list"></ul>
+          </div>
+
+          <!-- Batch actions -->
+          <div id="batch-actions" class="queue-actions hidden">
+            <button id="batch-usb-sign-btn" class="batch-btn batch-btn--sign" disabled>
+              Ky So nhieu file
+            </button>
+            <button id="batch-contractor-sign-btn" class="batch-btn batch-btn--contractor" disabled>
+              Ky Nha Thau (nhieu file)
+            </button>
+          </div>
+
+          <!-- Reuse selection hint -->
+          <div id="reuse-hint" class="reuse-hint hidden">
+            <span class="reuse-hint__icon">ℹ️</span>
+            <span>Vùng chọn sẽ được áp dụng cho tất cả file trong hàng đợi.</span>
+          </div>
         </div>
 
         <div class="panel">
@@ -197,6 +221,38 @@
           </p>
         </div>
       </aside>
+
+      <!-- ── Batch Progress Overlay ── -->
+      <div id="batch-overlay" class="batch-overlay hidden">
+        <div class="batch-overlay__card">
+          <div class="batch-overlay__icon" id="batch-overlay-icon">📄</div>
+          <h2 class="batch-overlay__title" id="batch-overlay-title">Đang ký số nhiều file...</h2>
+          <p class="batch-overlay__subtitle" id="batch-overlay-subtitle">
+            Vui lòng đợi, đang xử lý từng file một.
+          </p>
+          <div class="batch-overlay__progress-bar-wrap">
+            <div class="batch-overlay__progress-bar" id="batch-progress-bar"></div>
+          </div>
+          <p class="batch-overlay__progress-text" id="batch-progress-text">0 / 0 file</p>
+          <p class="batch-overlay__file-text" id="batch-file-text">...</p>
+          <button id="batch-cancel-btn" class="batch-overlay__cancel-btn">Hủy ký</button>
+          <!-- Summary (shown after done) -->
+          <div id="batch-summary" class="batch-summary hidden">
+            <div class="batch-summary__row">
+              <span>Tổng cộng</span>
+              <span id="summary-total">0</span>
+            </div>
+            <div class="batch-summary__row">
+              <span>Thành công</span>
+              <span id="summary-success" class="batch-summary__success">0</span>
+            </div>
+            <div class="batch-summary__row">
+              <span>Thất bại</span>
+              <span id="summary-fail" class="batch-summary__fail">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <main class="workspace">
         <div id="empty-state" class="empty-state">

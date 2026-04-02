@@ -616,3 +616,330 @@ button:disabled {
     border-bottom: 1px solid rgba(24, 48, 40, 0.08);
   }
 }
+
+/* ─── FILE QUEUE PANEL ─── */
+.file-queue-panel {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.file-queue-empty {
+  text-align: center;
+  padding: 12px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.file-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(24, 48, 40, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+  position: relative;
+}
+
+.file-item:hover {
+  background: rgba(13, 108, 93, 0.06);
+  border-color: rgba(13, 108, 93, 0.25);
+  transform: translateX(2px);
+}
+
+.file-item.is-active {
+  background: rgba(13, 108, 93, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(13, 108, 93, 0.12);
+}
+
+.file-item.is-signed {
+  background: rgba(235, 185, 78, 0.12);
+  border-color: rgba(235, 185, 78, 0.5);
+  opacity: 0.75;
+  cursor: default;
+}
+
+.file-item.is-signed:hover {
+  transform: none;
+  background: rgba(235, 185, 78, 0.12);
+  border-color: rgba(235, 185, 78, 0.5);
+}
+
+.file-item.is-error {
+  background: rgba(192, 57, 43, 0.08);
+  border-color: rgba(192, 57, 43, 0.35);
+}
+
+.file-item__icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.file-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-item__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.file-item__meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.file-item__badge {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.file-item__badge--active {
+  background: rgba(13, 108, 93, 0.15);
+  color: var(--primary-dark);
+}
+
+.file-item__badge--signed {
+  background: rgba(235, 185, 78, 0.25);
+  color: #7a5200;
+}
+
+.file-item__badge--error {
+  background: rgba(192, 57, 43, 0.15);
+  color: #8b1a10;
+}
+
+.file-item__remove {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 150ms ease, transform 100ms ease;
+  opacity: 0;
+}
+
+.file-item:hover .file-item__remove {
+  opacity: 1;
+}
+
+.file-item__remove:hover {
+  background: rgba(192, 57, 43, 0.25);
+  transform: scale(1.1);
+}
+
+.file-item.is-signed .file-item__remove {
+  display: none;
+}
+
+/* Queue action buttons */
+.queue-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Batch progress overlay */
+.batch-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 35, 29, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeInUp 300ms ease both;
+}
+
+.batch-overlay.hidden {
+  display: none;
+}
+
+.batch-overlay__card {
+  background: white;
+  border-radius: 24px;
+  padding: 36px 40px;
+  width: min(480px, 90vw);
+  box-shadow: 0 32px 80px rgba(18, 35, 29, 0.22);
+  text-align: center;
+}
+
+.batch-overlay__icon {
+  font-size: 44px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.batch-overlay__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.batch-overlay__subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.batch-overlay__progress-bar-wrap {
+  background: rgba(13, 108, 93, 0.1);
+  border-radius: 12px;
+  height: 12px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.batch-overlay__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, #0b8d79 100%);
+  border-radius: 12px;
+  transition: width 300ms ease;
+  width: 0%;
+}
+
+.batch-overlay__progress-text {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.batch-overlay__file-text {
+  font-size: 12px;
+  color: var(--primary-dark);
+  background: rgba(13, 108, 93, 0.08);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 22px;
+}
+
+.batch-overlay__cancel-btn {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+  border: 1.5px solid rgba(192, 57, 43, 0.25);
+  width: auto;
+  padding: 10px 24px;
+  font-size: 13px;
+}
+
+.batch-overlay__cancel-btn:hover:not(:disabled) {
+  background: rgba(192, 57, 43, 0.18);
+  transform: none;
+}
+
+/* Batch summary */
+.batch-summary {
+  text-align: left;
+  margin-top: 6px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(13, 108, 93, 0.06);
+  border: 1px solid rgba(13, 108, 93, 0.12);
+}
+
+.batch-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 3px 0;
+}
+
+.batch-summary__row span:first-child {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.batch-summary__row span:last-child {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.batch-summary__success { color: var(--primary-dark) !important; }
+.batch-summary__fail { color: #c0392b !important; }
+
+/* Reuse selection hint */
+.reuse-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  background: rgba(13, 108, 93, 0.07);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.reuse-hint__icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+/* Batch buttons */
+.batch-btn {
+  flex: 1;
+  font-size: 12px;
+  padding: 10px 8px;
+}
+
+.batch-btn--sign {
+  background: linear-gradient(135deg, #0b6f5c 0%, #094d42 100%);
+  color: white;
+}
+
+.batch-btn--contractor {
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  color: white;
+}
