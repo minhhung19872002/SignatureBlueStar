@@ -293,6 +293,10 @@ async function loadPdfBytesIntoFile(file, rawBytes) {
   const { PDFDocument } = PDFLib;
 
   file.pdfBytes = rawBytes;
+  // Preserve original bytes for batch signing — never clear _rawBase64
+  if (!file._rawBase64) {
+    file._rawBase64 = uint8ArrayToBase64(rawBytes);
+  }
   file.selection = null;
   file.placements = [];
 
@@ -308,6 +312,7 @@ async function showPdfInViewer(file) {
 
   file.pages = await renderAllPages(file.pdfJsDoc, file);
   file.placements.forEach((p) => addSignaturePreviewForFile(p, file));
+  restoreSelectionVisual(file);
 
   applySignatureBtn.disabled = !file.selection;
   saveFileBtn.disabled = file.placements.length === 0;
@@ -363,8 +368,6 @@ async function handleOpenPdf() {
 
   try {
     await loadPdfBytesIntoFile(firstFile, base64ToUint8Array(firstFile._rawBase64));
-    // Free raw base64 after loading
-    firstFile._rawBase64 = null;
     await showPdfInViewer(firstFile);
   } catch (error) {
     console.error(error);
@@ -865,13 +868,12 @@ async function handleContractorSign() {
 // ═══════════════════════════════════════════════════════
 
 async function signOneFileBatch(file, certThumbprint, options) {
-  // Use current file's selection as the template
-  const templateFile = getCurrentFile();
-  if (!templateFile || !templateFile.selection) {
-    throw new Error('Khong co vung chon tren file hien tai.');
+  // Use THIS file's own selection — not the current/viewed file's selection
+  if (!file.selection) {
+    throw new Error(`Khong co vung chon tren file ${file.fileName}.`);
   }
 
-  const { pageIndex, viewport, screenRect } = templateFile.selection;
+  const { pageIndex, viewport, screenRect } = file.selection;
   const page = file.pdfDoc.getPages()[pageIndex];
   const pdfWidth = page.getWidth();
   const pdfHeight = page.getHeight();
@@ -914,12 +916,6 @@ async function saveSignedFile(file, signedBytes, suffix = '-signed') {
 
 // ── Batch USB Sign ──
 async function handleBatchUsbSign() {
-  const templateFile = getCurrentFile();
-  if (!templateFile || !templateFile.selection) {
-    setStatus('Can chon vung ky tren file hien tai truoc khi ky so nhieu file.');
-    return;
-  }
-
   if (!certificateSelect.value) {
     setStatus('Can chon chung thu WINCA truoc khi ky so nhieu file.');
     return;
@@ -931,93 +927,116 @@ async function handleBatchUsbSign() {
     return;
   }
 
+  // Check every file has a selection
+  const missingSelection = pendingFiles.filter((f) => !f.selection);
+  if (missingSelection.length > 0) {
+    setStatus(`Cac file sau chua co vung ky: ${missingSelection.map((f) => f.fileName).join(', ')}`);
+    return;
+  }
+
   const thumbprint = certificateSelect.value;
   const cert = state.certificates?.find((c) => c.thumbprint === thumbprint);
   const signerName = cert ? trimSubject(cert.subject) : 'WINCA Signer';
 
-  // Freeze snapshot so it doesn't change mid-loop
-  const pendingSnapshot = pendingFiles.map((f) => ({ id: f.id, fileName: f.fileName }));
-  const totalCount = pendingSnapshot.length;
-
+  const totalCount = pendingFiles.length;
   state.batchCancelled = false;
 
   showBatchOverlay({
     title: 'Ky So Nhieu File',
-    subtitle: `Dang ky so ${totalCount} file. Vui long khong rut USB/HSM khi dang ky.`,
+    subtitle: `Dang ky so ${totalCount} file — PIN chi yeu cau 1 lan.`,
     icon: '📄',
     totalCount
   });
 
-  let successCount = 0;
-  let failCount = 0;
-  let processedCount = 0;
+  // Build one payload — main process reads bytes directly from filePath
+  const batchPayloads = pendingFiles.map((file) => {
+    const { pageIndex, viewport, screenRect } = file.selection;
+    const page = file.pdfDoc.getPages()[pageIndex];
+    const pdfWidth = page.getWidth();
+    const pdfHeight = page.getHeight();
+    const scaleX = pdfWidth / viewport.width;
+    const scaleY = pdfHeight / viewport.height;
+    const x1 = screenRect.left * scaleX;
+    const y1 = pdfHeight - ((screenRect.top + screenRect.height) * scaleY);
+    const x2 = x1 + screenRect.width * scaleX;
+    const y2 = y1 + screenRect.height * scaleY;
 
-  for (const snap of pendingSnapshot) {
-    if (state.batchCancelled) {
-      updateBatchOverlayCancelled(processedCount, totalCount, failCount);
-      break;
+    return {
+      id: file.id,
+      filePath: file.filePath,
+      pageIndex,
+      widgetRect: [x1, y1, x2, y2],
+      signerName,
+      reason: 'Ky so USB token batch',
+      location: 'Vietnam'
+    };
+  });
+
+  try {
+    updateBatchProgress(1, totalCount, 'Dang ky... (PIN chi yeu cau 1 lan)');
+
+    // Single IPC call — PIN prompts only ONCE
+    const results = await window.pdfDesktopApi.signBatchWithUsb({
+      files: batchPayloads,
+      certThumbprint: thumbprint
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      const file = state.files.find((f) => f.id === result.id);
+      if (!file) continue;
+
+      if (result.error) {
+        file.status = 'error';
+        file.errorMessage = result.error;
+        failCount++;
+        updateBatchProgress(i + 1, totalCount, `${file.fileName} — LOI: ${result.error}`);
+      } else {
+        try {
+          const signedBytes = base64ToUint8Array(result.data);
+          await saveSignedFile(file, signedBytes, '-signed');
+          file.signedBytes = signedBytes;
+          file.status = 'signed';
+          successCount++;
+          updateBatchProgress(i + 1, totalCount, `${file.fileName} ✅`);
+        } catch (err) {
+          file.status = 'error';
+          file.errorMessage = err.message;
+          failCount++;
+          updateBatchProgress(i + 1, totalCount, `${file.fileName} — LOI: ${err.message}`);
+          console.error(`[Save] ${file.fileName} failed:`, err);
+        }
+      }
+
+      renderFileQueue();
     }
 
-    const file = state.files.find((f) => f.id === snap.id);
-    if (!file) {
-      failCount++;
-      processedCount++;
-      updateBatchProgress(processedCount, totalCount, snap.fileName + ' (da xoa)');
-      continue;
+    // If there were failures, show log file path
+    if (failCount > 0 && results[0]?.logPath) {
+      setStatus(`Ky so xong: ${successCount} thanh cong, ${failCount} that bai. Log: ${results[0].logPath}`);
     }
 
-    file.status = 'signing';
-    renderFileQueue();
-    updateBatchProgress(processedCount + 1, totalCount, snap.fileName);
+    hideBatchOverlay(totalCount, totalCount, successCount, failCount);
 
-    try {
-      const signedBytes = await signOneFileBatch(file, thumbprint, {
-        signerName,
-        reason: 'Ky so USB token batch',
-        location: 'Vietnam'
-      });
-
-      const saveResult = await saveSignedFile(file, signedBytes, '-signed');
-
-      file.signedBytes = signedBytes;
-      file.status = 'signed';
-      successCount++;
-    } catch (error) {
-      console.error(`Batch sign failed for ${file.fileName}:`, error);
-      file.status = 'error';
-      file.errorMessage = error.message;
-      failCount++;
+    if (failCount === 0) {
+      setStatus(`Da ky so thanh cong ${successCount} file. Tat ca da duoc luu.`);
+    } else {
+      setStatus(`Ky so xong: ${successCount} thanh cong, ${failCount} that bai. Log: ${results[0]?.logPath || ''}`);
     }
-
-    processedCount++;
-    renderFileQueue();
-    updateButtonStates();
+  } catch (error) {
+    console.error('Batch sign failed:', error);
+    setStatus(`Ky so that bai (loi chinh): ${error.message}`);
+    hideBatchOverlay(0, totalCount, 0, totalCount);
   }
 
-  if (state.batchCancelled) {
-    state.batchCancelled = false;
-    setStatus(`Da huy ky so. Hoan tat ${processedCount}/${totalCount} file.`);
-    return;
-  }
-
-  hideBatchOverlay(processedCount, totalCount, successCount, failCount);
-  state.batchCancelled = false;
-
-  if (failCount === 0) {
-    setStatus(`Da ky so thanh cong ${successCount} file. Tat ca da duoc luu.`);
-  } else {
-    setStatus(`Ky so xong: ${successCount} thanh cong, ${failCount} that bai.`);
-  }
+  updateButtonStates();
 }
 
 // ── Batch Contractor Sign ──
 async function handleBatchContractorSign() {
-  const templateFile = getCurrentFile();
-  if (!templateFile || !templateFile.selection) {
-    setStatus('Can chon vung ky tren file hien tai truoc khi ky so nhieu file.');
-    return;
-  }
-
   if (!contractorCertSelect.value) {
     setStatus('Can chon chung thu WINCA (Nha Thau) truoc khi ky so nhieu file.');
     return;
@@ -1029,88 +1048,96 @@ async function handleBatchContractorSign() {
     return;
   }
 
-  const company = contractorCompanyInput.value.trim();
-  const mst = contractorMstInput.value.trim();
-  const address = contractorAddressInput.value.trim();
+  const missingSelection = pendingFiles.filter((f) => !f.selection);
+  if (missingSelection.length > 0) {
+    setStatus(`Cac file sau chua co vung ky: ${missingSelection.map((f) => f.fileName).join(', ')}`);
+    return;
+  }
+
   const signerName = contractorNameInput.value.trim() || trimSubject(
     state.contractorCerts?.find((c) => c.thumbprint === contractorCertSelect.value)?.subject || ''
   );
-  const signerTitle = contractorTitleInput.value.trim() || 'Giam doc';
+  const location = contractorAddressInput.value.trim() || 'Vietnam';
 
-  // Freeze snapshot so it doesn't change mid-loop
-  const pendingSnapshot = pendingFiles.map((f) => ({ id: f.id, fileName: f.fileName }));
-  const totalCount = pendingSnapshot.length;
-
+  const totalCount = pendingFiles.length;
   state.batchCancelled = false;
 
   showBatchOverlay({
     title: 'Ky So Nha Thau — Nhieu File',
-    subtitle: `Dang ky so ${totalCount} file. Vui long khong rut USB/HSM khi dang ky.`,
+    subtitle: `Dang ky so ${totalCount} file — PIN chi yeu cau 1 lan.`,
     icon: '🏢',
     totalCount
   });
 
-  let successCount = 0;
-  let failCount = 0;
-  let processedCount = 0;
+  const batchPayloads = pendingFiles.map((file) => {
+    const { pageIndex, viewport, screenRect } = file.selection;
+    const page = file.pdfDoc.getPages()[pageIndex];
+    const pdfWidth = page.getWidth();
+    const pdfHeight = page.getHeight();
+    const scaleX = pdfWidth / viewport.width;
+    const scaleY = pdfHeight / viewport.height;
+    const x1 = screenRect.left * scaleX;
+    const y1 = pdfHeight - ((screenRect.top + screenRect.height) * scaleY);
+    const x2 = x1 + screenRect.width * scaleX;
+    const y2 = y1 + screenRect.height * scaleY;
 
-  for (const snap of pendingSnapshot) {
-    if (state.batchCancelled) {
-      updateBatchOverlayCancelled(processedCount, totalCount, failCount);
-      break;
+    return {
+      id: file.id,
+      filePath: file.filePath,
+      pageIndex,
+      widgetRect: [x1, y1, x2, y2],
+      signerName,
+      reason: 'Ky so Dai Dien Nha Thau',
+      location
+    };
+  });
+
+  try {
+    updateBatchProgress(1, totalCount, 'Dang ky... (PIN chi yeu cau 1 lan)');
+
+    const results = await window.pdfDesktopApi.signBatchWithUsb({
+      files: batchPayloads,
+      certThumbprint: contractorCertSelect.value
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < results.length; i++) {
+      const { id, data } = results[i];
+      const file = state.files.find((f) => f.id === id);
+      if (!file) continue;
+
+      try {
+        const signedBytes = base64ToUint8Array(data);
+        await saveSignedFile(file, signedBytes, '-nha-thau-signed');
+        file.signedBytes = signedBytes;
+        file.status = 'signed';
+        successCount++;
+      } catch (err) {
+        file.status = 'error';
+        file.errorMessage = err.message;
+        failCount++;
+      }
+
+      updateBatchProgress(i + 1, totalCount, file.fileName);
+      renderFileQueue();
     }
 
-    const file = state.files.find((f) => f.id === snap.id);
-    if (!file) {
-      failCount++;
-      processedCount++;
-      updateBatchProgress(processedCount, totalCount, snap.fileName + ' (da xoa)');
-      continue;
+    hideBatchOverlay(totalCount, totalCount, successCount, failCount);
+
+    if (failCount === 0) {
+      setStatus(`Da ky so Dai Dien Nha Thau thanh cong ${successCount} file.`);
+    } else {
+      setStatus(`Ky so Nha Thau: ${successCount} thanh cong, ${failCount} that bai.`);
     }
-
-    file.status = 'signing';
-    renderFileQueue();
-    updateBatchProgress(processedCount + 1, totalCount, snap.fileName);
-
-    try {
-      const signedBytes = await signOneFileBatch(file, contractorCertSelect.value, {
-        signerName: signerName || 'Dai Dien Nha Thau',
-        reason: 'Ky so Dai Dien Nha Thau',
-        location: address || 'Vietnam',
-        extra: { companyName: company, mst, address, signerTitle }
-      });
-
-      await saveSignedFile(file, signedBytes, '-nha-thau-signed');
-
-      file.signedBytes = signedBytes;
-      file.status = 'signed';
-      successCount++;
-    } catch (error) {
-      console.error(`Batch contractor sign failed for ${file.fileName}:`, error);
-      file.status = 'error';
-      file.errorMessage = error.message;
-      failCount++;
-    }
-
-    processedCount++;
-    renderFileQueue();
-    updateButtonStates();
+  } catch (error) {
+    console.error('Batch contractor sign failed:', error);
+    setStatus(`Ky so Nha Thau that bai: ${error.message}`);
+    hideBatchOverlay(0, totalCount, 0, totalCount);
   }
 
-  if (state.batchCancelled) {
-    state.batchCancelled = false;
-    setStatus(`Da huy ky so Nha Thau. Hoan tat ${processedCount}/${totalCount} file.`);
-    return;
-  }
-
-  hideBatchOverlay(processedCount, totalCount, successCount, failCount);
-  state.batchCancelled = false;
-
-  if (failCount === 0) {
-    setStatus(`Da ky so Dai Dien Nha Thau thanh cong ${successCount} file.`);
-  } else {
-    setStatus(`Ky so Nha Thau: ${successCount} thanh cong, ${failCount} that bai.`);
-  }
+  updateButtonStates();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1217,6 +1244,21 @@ function setStatus(message) {
 
 function clearSelectionVisuals() {
   document.querySelectorAll('.selection-box').forEach((n) => n.remove());
+}
+
+function restoreSelectionVisual(file) {
+  if (!file.selection) return;
+  const page = file.pages.find((p) => p.pageIndex === file.selection.pageIndex);
+  if (!page) return;
+
+  const sel = file.selection.screenRect;
+  const box = document.createElement('div');
+  box.className = 'selection-box';
+  box.style.left = `${sel.left}px`;
+  box.style.top = `${sel.top}px`;
+  box.style.width = `${sel.width}px`;
+  box.style.height = `${sel.height}px`;
+  page.wrapper.appendChild(box);
 }
 
 function clearSignaturePreviews() {

@@ -134,6 +134,10 @@ ipcMain.handle('signer:listCertificates', async () => {
   return JSON.parse(output || '[]');
 });
 
+// Cache for the batch session key handle — once PIN is entered, reuse it
+let _batchSessionKeyHandle = null;
+let _batchSessionThumbprint = null;
+
 ipcMain.handle('pdf:signWithUsb', async (_, payload) => {
   const {
     data,
@@ -174,6 +178,109 @@ ipcMain.handle('pdf:signWithUsb', async (_, payload) => {
   return {
     data: Buffer.from(signedPdf).toString('base64')
   };
+});
+
+// Batch USB sign — one IPC call, PIN prompts ONCE via signbatch
+ipcMain.handle('pdf:signBatchWithUsb', async (_, payload) => {
+  const { files, certThumbprint } = payload;
+  const helperPath = resolveSignerHelperPath();
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sign-batch-'));
+  const logPath = path.join(os.tmpdir(), 'sign-batch-error.log');
+  let logLines = [`[${new Date().toISOString()}] Bat dau ky so batch — ${files.length} file\n`];
+
+  const writeLog = (line) => {
+    logLines.push(line + '\n');
+  };
+
+  try {
+    // Step 1: Draw signature + add placeholder for each file, save to temp
+    const inputOutputPairs = [];
+
+    for (const f of files) {
+      writeLog(`[${f.id}] Preparing PDF...`);
+      const pdfBytes = await fs.readFile(f.filePath);
+      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const pdfPage = pdfDoc.getPages()[f.pageIndex];
+
+      await drawVisibleSignatureBlock(pdfDoc, pdfPage, f.widgetRect);
+
+      pdflibAddPlaceholder({
+        pdfDoc,
+        pdfPage,
+        reason: f.reason || 'Signed with WINCA USB token',
+        contactInfo: f.signerName || '',
+        name: f.signerName || 'WINCA Signer',
+        location: f.location || 'Vietnam',
+        signatureLength: 16000,
+        subFilter: SUBFILTER_ADOBE_PKCS7_DETACHED,
+        widgetRect: f.widgetRect,
+        appName: 'Signature Blue Star'
+      });
+
+      const pdfWithPlaceholder = Buffer.from(
+        await pdfDoc.save({ useObjectStreams: false })
+      );
+
+      const inputPath = path.join(tempDir, `${f.id}.pdf`);
+      const outputPath = path.join(tempDir, `${f.id}-signed.pdf`);
+      await fs.writeFile(inputPath, pdfWithPlaceholder);
+      writeLog(`[${f.id}] Temp PDF size: ${pdfWithPlaceholder.length}`);
+      inputOutputPairs.push({ id: f.id, inputPath, outputPath });
+    }
+
+    // Step 2: Call signbatch ONCE — PIN prompted HERE and cached for all files
+    const signArgs = ['signbatch', certThumbprint];
+    for (const pair of inputOutputPairs) {
+      signArgs.push(pair.inputPath, pair.outputPath);
+    }
+
+    writeLog('Calling signbatch (PIN will prompt once)...');
+    let signOutput = '';
+    try {
+      signOutput = await runHelper(signArgs, helperPath);
+      writeLog(`signbatch result: ${signOutput}`);
+    } catch (err) {
+      writeLog(`signbatch error: ${err.message}`);
+    }
+
+    // Step 3: Read signed PDFs
+    const results = [];
+    const outputByInput = {};
+
+    if (signOutput) {
+      try {
+        const signResults = JSON.parse(signOutput);
+        for (const sr of signResults) {
+          outputByInput[sr.input] = sr;
+        }
+      } catch (err) {
+        writeLog(`JSON parse error: ${err.message}`);
+      }
+    }
+
+    for (const pair of inputOutputPairs) {
+      const sr = outputByInput[pair.inputPath];
+      if (sr?.success) {
+        try {
+          const signedBytes = await fs.readFile(pair.outputPath);
+          writeLog(`[${pair.id}] Signed PDF size: ${signedBytes.length}`);
+          results.push({ id: pair.id, data: Buffer.from(signedBytes).toString('base64') });
+        } catch (err) {
+          writeLog(`[${pair.id}] Read error: ${err.message}`);
+          results.push({ id: pair.id, error: `Loi doc file da ky: ${err.message}` });
+        }
+      } else {
+        const errMsg = sr?.error || 'signbatch khong tra ket qua';
+        writeLog(`[${pair.id}] Failed: ${errMsg}`);
+        results.push({ id: pair.id, error: errMsg });
+      }
+    }
+
+    await fs.writeFile(logPath, logLines.join(''));
+    return results;
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
 });
 
 async function drawVisibleSignatureBlock(pdfDoc, pdfPage, widgetRect) {
@@ -257,6 +364,12 @@ function runHelper(args, helperPath) {
     child.on('error', reject);
     child.on('close', (code) => {
       if (code === 0) {
+        resolve(stdout.trim());
+        return;
+      }
+
+      // Non-zero exit: still resolve if stdout has content (e.g. partial JSON results)
+      if (stdout.trim()) {
         resolve(stdout.trim());
         return;
       }
