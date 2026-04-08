@@ -146,14 +146,15 @@ ipcMain.handle('pdf:signWithUsb', async (_, payload) => {
     widgetRect,
     signerName,
     reason,
-    location
+    location,
+    signatureImageName = 'Signature.png'
   } = payload;
 
   const pdfBytes = Buffer.from(data, 'base64');
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const pdfPage = pdfDoc.getPages()[pageIndex];
 
-  await drawVisibleSignatureBlock(pdfDoc, pdfPage, widgetRect);
+  await drawVisibleSignatureBlock(pdfDoc, pdfPage, widgetRect, signatureImageName);
 
   pdflibAddPlaceholder({
     pdfDoc,
@@ -202,7 +203,7 @@ ipcMain.handle('pdf:signBatchWithUsb', async (_, payload) => {
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const pdfPage = pdfDoc.getPages()[f.pageIndex];
 
-      await drawVisibleSignatureBlock(pdfDoc, pdfPage, f.widgetRect);
+      await drawVisibleSignatureBlock(pdfDoc, pdfPage, f.widgetRect, f.signatureImageName);
 
       pdflibAddPlaceholder({
         pdfDoc,
@@ -283,11 +284,11 @@ ipcMain.handle('pdf:signBatchWithUsb', async (_, payload) => {
   }
 });
 
-async function drawVisibleSignatureBlock(pdfDoc, pdfPage, widgetRect) {
+async function drawVisibleSignatureBlock(pdfDoc, pdfPage, widgetRect, signatureImageName = 'Signature.png') {
   const [x1, y1, x2, y2] = widgetRect;
   const width = Math.max(10, x2 - x1);
   const height = Math.max(10, y2 - y1);
-  const signatureBytes = await fs.readFile(resolveSignatureImagePath());
+  const signatureBytes = await fs.readFile(resolveSignatureImagePath(signatureImageName));
   const signatureImage = await pdfDoc.embedPng(signatureBytes);
   const imageRatio = signatureImage.width / signatureImage.height;
 
@@ -326,14 +327,14 @@ function resolveSignerHelperPath() {
   return helperPath;
 }
 
-function resolveSignatureImagePath() {
+function resolveSignatureImagePath(imageName = 'Signature.png') {
   const candidates = app.isPackaged
     ? [
-        path.join(process.resourcesPath, 'Signature.png'),
-        path.join(process.resourcesPath, 'app.asar.unpacked', 'Signature.png')
+        path.join(process.resourcesPath, imageName),
+        path.join(process.resourcesPath, 'app.asar.unpacked', imageName)
       ]
     : [
-        path.join(__dirname, 'Signature.png')
+        path.join(__dirname, imageName)
       ];
 
   const imagePath = candidates.find((candidate) => fssync.existsSync(candidate));

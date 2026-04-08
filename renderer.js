@@ -29,6 +29,7 @@ const fileQueueEmpty = document.getElementById('file-queue-empty');
 const batchActions = document.getElementById('batch-actions');
 const batchUsbSignBtn = document.getElementById('batch-usb-sign-btn');
 const batchContractorSignBtn = document.getElementById('batch-contractor-sign-btn');
+const clearAllBtn = document.getElementById('clear-all-btn');
 const reuseHint = document.getElementById('reuse-hint');
 
 // Batch overlay elements
@@ -71,6 +72,7 @@ contractorTitleInput.addEventListener('input', updateContractorPreview);
 contractorSignBtn.addEventListener('click', handleContractorSign);
 batchUsbSignBtn.addEventListener('click', handleBatchUsbSign);
 batchContractorSignBtn.addEventListener('click', handleBatchContractorSign);
+clearAllBtn.addEventListener('click', handleClearAll);
 batchCancelBtn.addEventListener('click', () => {
   if (state.batchActive) {
     state.batchCancelled = true;
@@ -238,6 +240,15 @@ function removeFileFromQueue(id) {
   }
   renderFileQueue();
   updateButtonStates();
+}
+
+function handleClearAll() {
+  state.files = [];
+  state.currentFileId = null;
+  showEmptyState();
+  renderFileQueue();
+  updateButtonStates();
+  setStatus('Da xoa tat ca file PDF.');
 }
 
 async function switchToFile(id) {
@@ -829,7 +840,8 @@ async function handleContractorSign() {
       companyName: company,
       mst: mst,
       address: address,
-      signerTitle: signerTitle
+      signerTitle: signerTitle,
+      signatureImageName: 'Signature_2.png'
     });
 
     const signedBytes = base64ToUint8Array(signed.data);
@@ -1088,7 +1100,8 @@ async function handleBatchContractorSign() {
       widgetRect: [x1, y1, x2, y2],
       signerName,
       reason: 'Ky so Dai Dien Nha Thau',
-      location
+      location,
+      signatureImageName: 'Signature_2.png'
     };
   });
 

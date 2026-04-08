@@ -38,6 +38,10 @@
       {
         "from": "Signature.png",
         "to": "Signature.png"
+      },
+      {
+        "from": "Signature_2.png",
+        "to": "Signature_2.png"
       }
     ],
     "files": [
@@ -47,6 +51,7 @@
       "renderer.js",
       "styles.css",
       "Signature.png",
+      "Signature_2.png",
       "node_modules/pdf-lib/**/*",
       "node_modules/pdfjs-dist/**/*",
       "node_modules/@signpdf/**/*",
